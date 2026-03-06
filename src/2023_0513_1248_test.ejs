@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# website: http://ogp.me/ns/website#">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content="A boilerplate for web creativesite, based on Webpack">
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="https://use.typekit.net/rrl3lhx.css">
+<link rel="icon" href="../favicon.png" type="image/png">
+<title>2023_0513_1248_tenomaee_DTSP</title>
+</head>
+<body>
+  <div id="webgl"></div>
+  <div id="slider">
+    <img src="../assets/images/default.png" />
+    <img src="../assets/images/visibility.png" />
+  </div>
+  <% var myData = {date:'2023_0513_1248', up:'2023_0707', map:'https://earth.google.com/web/@35.7756154,139.6691486,20.98869339a,1000d,30y,0h,0t,0r/data=MigKJgokCiAxNk13WWhtTzY0WUJsZGVHcU16Q25hQ1lydS1mS2VpVSACOgMKATA', tag:'<a href="https://dtsp.site/tag/provoke-2">#provoke -2.0</a>', other:'<a href="https://tympanus.net/codrops/2018/04/10/webgl-distortion-hover-effects/" target="_blank">WebGL Distortion Hover Effects | Codrops</a><br><a href="https://liginc.co.jp/553484" target="_blank">Three.jsを使って3Dのモーフィングアニメーションを実装する | 株式会社LIG(リグ)</a>'}; %>
+  <%- include assets/control.ejs {myData} %>
+</body>
+<!-- vertexShader -->
+<script id="js-vertex-shader" type="x-shader/x-vertex">
+  attribute vec3 position;
+  attribute vec3 secPosition;
+  attribute vec3 thirdPosition;
+  uniform float u_sec1;
+  uniform float u_sec2;
+  attribute float vertexIndex;
+  attribute float phaseValue;
+  attribute vec4 randomValue;
+  uniform float u_switch_01;
+  uniform float u_switch_02;
+  uniform float u_animationRange;
+  uniform float u_particle_animation_range;
+  uniform float u_time;
+  uniform float u_particle_range;
+  uniform float maxOffsetRatio;
+  uniform float minDurationRatio;
+  uniform mat4 modelMatrix;
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+  uniform vec3 eyePosition;
+  varying vec3 vPosition;
+
+  float getVertexAnimationValue(float value) {
+    float offsetRatio = randomValue.x * maxOffsetRatio;
+    float maxDurationRatio = 1.0 - offsetRatio;
+    float durationRatio = maxDurationRatio * (minDurationRatio + (1.0 - minDurationRatio) * randomValue.y);
+    float vertexAnimationValue = max(0.0, value - offsetRatio);
+    vertexAnimationValue = min(vertexAnimationValue, durationRatio);
+    vertexAnimationValue = vertexAnimationValue / durationRatio;
+    return vertexAnimationValue;
+}
+
+#ifndef PI
+#define PI 3.141592653589793
+#endif
+#ifndef HALF_PI
+#define HALF_PI 1.5707963267948966
+#endif
+float easeInOutBack(float t) {
+    float f = t < 0.5
+    ? 2.0 * t
+    : 1.0 - (2.0 * t - 1.0);
+    float g = pow(f, 3.0) - f * sin(f * PI);
+    return t < 0.5
+    ? 0.5 * g
+    : 0.5 * (1.0 - g) + 0.5;
+}
+float easeInOutElastic(float t) {
+    return t < 0.5
+    ? 0.5 * sin(+13.0 * HALF_PI * 2.0 * t) * pow(2.0, 10.0 * (2.0 * t - 1.0))
+    : 0.5 * sin(-13.0 * HALF_PI * ((2.0 * t - 1.0) + 1.0)) * pow(2.0, -10.0 * (2.0 * t - 1.0)) + 1.0;
+}
+float easeInOutExpo(float t) {
+    return t == 0.0 || t == 1.0
+    ? t
+    : t < 0.5
+      ? +0.5 * pow(2.0, (20.0 * t) - 10.0)
+      : -0.5 * pow(2.0, 10.0 - (t * 20.0)) + 1.0;
+}
+
+float sineInOut(float t) {
+  return -0.5 * (cos(PI * t) - 1.0);
+}
+
+  void main() {
+
+   vec3 finalPos = mix(position, secPosition, u_sec1) * (1.0 + u_particle_animation_range * sineInOut(getVertexAnimationValue(u_animationRange)));
+
+   float moveRange = u_particle_range;
+   float randX = moveRange * sineInOut(getVertexAnimationValue(sin(u_time + phaseValue)));
+   float randY = moveRange * sineInOut(getVertexAnimationValue(cos(u_time + phaseValue)));
+   float randZ = randX + randY;
+
+   gl_Position = projectionMatrix * modelViewMatrix * vec4(finalPos, 1.0 );
+   
+   float sizeRange = 0.1 * phaseValue;
+   float sizeMoveRange = 3.0;
+   gl_PointSize = 3.0 + sizeRange + sizeMoveRange * sineInOut(getVertexAnimationValue(sin(u_time * 2.0 * phaseValue)));
+
+   //gl_PointSize = 3.0;
+
+  }
+  </script>
+  
+  <!-- fragmentShader -->
+  <script id="js-fragment-shader" type="x-shader/x-fragment">
+  precision mediump float;
+  uniform float u_alpha;
+
+  void main() {
+      vec2 temp = gl_PointCoord - vec2(0.5);
+      float f = dot(temp, temp);
+      if (f > 0.25 ) {
+          discard;
+      }
+      gl_FragColor = vec4(1.0, 1.0, 1.0, u_alpha);
+  }
+  </script> 
+  <script id="cover-vertex-shader" type="x-shader/x-vertex">
+    attribute vec3 position;
+    attribute vec2 uv;
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+
+    varying vec2 vUv;
+  
+    void main(void) {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+    }      
+  </script>
+  <script id="cover-fragment-shader" type="x-shader/x-fragment">
+    precision highp float;
+
+    uniform sampler2D texture;
+  
+    varying vec2 vUv;
+  
+    void main(void) {
+  
+      vec2 uv = vec2(vUv.x, vUv.y);
+      gl_FragColor = texture2D(texture, uv);
+      //gl_FragColor.a = 0.75;
+    }    
+  </script> 
+  <script id="ti-vertex-shader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
+</script>
+  <script id="ti-fragment-shader" type="x-shader/x-fragment">
+		uniform float time;
+		uniform float progress;
+		uniform float width;
+		uniform float transition;
+		uniform float radius;
+		uniform float intensity;
+		uniform sampler2D displacement;
+		uniform vec4 resolution;
+        
+        varying vec2 vUv;
+
+        uniform sampler2D currentImage;
+        uniform sampler2D nextImage;
+        void main() {
+
+            vec2 uv = vUv;
+            vec4 _currentImage;
+            vec4 _nextImage;
+        	//float intensity = 0.3;
+
+            vec4 orig1 = texture2D(currentImage, uv);
+            vec4 orig2 = texture2D(nextImage, uv);
+
+
+         float displace1 = (orig1.r + orig1.g + orig1.b)*0.33;
+         float displace2 = (orig2.r + orig2.g + orig2.b)*0.33;
+
+         vec4 t1 = texture2D(currentImage, vec2(uv.x, uv.y + progress * (displace2 * intensity)));
+         vec4 t2 = texture2D(nextImage, vec2(uv.x, uv.y + (1.0 - progress) * (displace1 * intensity)));
+
+            
+			gl_FragColor = mix(t1, t2, progress);
+
+        }
+    </script> 
+    <script id="v-shader_grd" type="x-shader/x-vertex">
+      varying vec2 vUv; 
+      void main()
+      {
+          vUv = uv;
+      
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0 );
+          gl_Position = projectionMatrix * mvPosition;
+      }
+        </script>
+   
+  <script id="f-shader_grd" type="x-shader/x-fragment">
+      varying vec2 vUv;
+      uniform vec2 iResolution; 
+  
+      float grid_intensity = 0.7;
+      // Thick lines 
+      float grid(vec2 fragCoord, float space, float gridWidth)
+      {
+          vec2 p  = fragCoord - vec2(0.5);
+          vec2 size = vec2(gridWidth);
+          
+          vec2 a1 = mod(p - size, space);
+          vec2 a2 = mod(p + size, space);
+          vec2 a = a2 - a1;
+             
+          float g = min(a.x, a.y);
+          return clamp(g, 0.0, 1.0);
+      }
+      
+      void main() {
+          vec2 uv = vUv;
+          vec2 fragCoord = vUv * iResolution;
+
+          // Pixel color
+          vec3 col = vec3(.7,.7,.7);
+          
+          // Gradient across screen
+          vec2 p = fragCoord.xy;           // Point
+        vec2 c = iResolution.xy / 2.0;   // Center
+          col *= (1.0 - length(c - p)/iResolution.x*0.7);
+        
+          // 2-size grid
+          col *= clamp(grid(fragCoord, 10.0, 0.5) *  grid(fragCoord, 50.0, 1.0), grid_intensity, 1.0);
+          
+          // Output to screen
+          gl_FragColor = vec4(col,1.0);
+      }      
+  </script>
+
+
+<script src="./app_2023_0513_1248_test.js" defer></script>
+
+</html>
