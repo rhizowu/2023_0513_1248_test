@@ -1,10 +1,15 @@
-import { GridHelper, PointLight, CanvasTexture, MeshPhongMaterial, PlaneGeometry, WebGLRenderer, LinearFilter, BufferGeometry, SphereGeometry, MeshBasicMaterial, TextureLoader, Vector4, Vector3, AdditiveBlending,  BufferAttribute, Points, Group, RawShaderMaterial, ShaderMaterial, Mesh} from 'three'
+import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js';
+import { Color, PointLight, CanvasTexture, MeshPhongMaterial, PlaneGeometry, WebGLRenderer, LinearFilter, BufferGeometry, SphereGeometry, MeshBasicMaterial, TextureLoader, Vector4, Vector3, Vector2, AdditiveBlending,  BufferAttribute, Points, Group, RawShaderMaterial, ShaderMaterial, Mesh} from 'three'
 import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { gsap, ScrollTrigger } from 'gsap/all';
 gsap.registerPlugin(ScrollTrigger); 
+
+
+
+
 
 export default class Obj_1 {
   constructor(stage) {
@@ -160,7 +165,7 @@ export default class Obj_1 {
               this.current = (this.current -1)%len;
               this.object.material.uniforms.currentImage.value = prevTexture;
               this.object.material.uniforms.progress.value = 0;
-            }})
+                      }})
       
         }
     });    
@@ -268,9 +273,20 @@ _render() {
     
   }
 
-  onRaf() {
-    if (this.particleMoveatart) {
-      this._render();
-    }
-  }
+onRaf() {
+}
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
 }
